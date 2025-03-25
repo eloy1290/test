@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Sorteo {
+  id                Int           @id @default(autoincrement())
+  nombre            String
+  descripcion       String?
+  presupuesto       Float?
+  fechaLimite       DateTime
+  fechaCreacion     DateTime      @default(now())
+  fechaSorteo       DateTime?
+  estado            EstadoSorteo  @default(PENDIENTE)
+  creadorEmail      String
+  creadorNombre     String
+  tokenAdmin        String        @unique // Token para el administrador
+  tokenResultados   String?       @unique // Token para ver resultados (si está completado)
+  participantes     Participante[]
+  exclusiones       Exclusion[]
+  asignaciones      Asignacion[]
+  fechaExpiracion   DateTime      // Cuando se eliminará automáticamente
+
+  @@index([creadorEmail], name: "idx_creador_email")
+  @@index([tokenAdmin], name: "idx_token_admin")
+  @@index([tokenResultados], name: "idx_token_resultados")
+  @@index([fechaExpiracion], name: "idx_fecha_expiracion")
+}
+
+enum EstadoSorteo {
+  PENDIENTE
+  COMPLETO
+  CANCELADO
+}
+
+model Participante {
+  id              Int           @id @default(autoincrement())
+  nombre          String
+  email           String
+  token           String        @unique // Token único para este participante
+  sorteoId        Int
+  sorteo          Sorteo        @relation(fields: [sorteoId], references: [id], onDelete: Cascade)
+  deseos          Deseo[]
+  exclusionesDe   Exclusion[]   @relation("ExclusionDe")
+  exclusionesA    Exclusion[]   @relation("ExclusionA")
+  asignacionDe    Asignacion?   @relation("AsignacionDe")
+  asignacionA     Asignacion?   @relation("AsignacionA")
+  fechaRegistro   DateTime      @default(now())
+  estado          EstadoParticipante @default(PENDIENTE)
+
+  @@unique([email, sorteoId])
+  @@index([token], name: "idx_participante_token")
+  @@index([sorteoId], name: "idx_participante_sorteo")
+}
+
+enum EstadoParticipante {
+  PENDIENTE
+  CONFIRMADO
+  RECHAZADO
+}
+
+model Exclusion {
+  id              Int           @id @default(autoincrement())
+  participanteDeId Int
+  participanteAId  Int
+  sorteoId        Int
+  participanteDe  Participante  @relation("ExclusionDe", fields: [participanteDeId], references: [id], onDelete: Cascade)
+  participanteA   Participante  @relation("ExclusionA", fields: [participanteAId], references: [id], onDelete: Cascade)
+  sorteo          Sorteo        @relation(fields: [sorteoId], references: [id], onDelete: Cascade)
+
+  @@unique([participanteDeId, participanteAId])
+  @@index([sorteoId], name: "idx_exclusion_sorteo")
+}
+
+model Asignacion {
+  id              Int           @id @default(autoincrement())
+  participanteDeId Int          @unique
+  participanteAId  Int          @unique
+  sorteoId        Int
+  asignacionEncriptada String   // Datos encriptados
+  participanteDe  Participante  @relation("AsignacionDe", fields: [participanteDeId], references: [id], onDelete: Cascade)
+  participanteA   Participante  @relation("AsignacionA", fields: [participanteAId], references: [id], onDelete: Cascade)
+  sorteo          Sorteo        @relation(fields: [sorteoId], references: [id], onDelete: Cascade)
+
+  @@index([sorteoId], name: "idx_asignacion_sorteo")
+}
+
+model Deseo {
+  id              Int           @id @default(autoincrement())
+  nombre          String
+  descripcion     String?
+  url             String?
+  precioEstimado  Float?
+  imagen          String?
+  amazonId        String?
+  amazonAfiliado  String?
+  participanteId  Int
+  participante    Participante  @relation(fields: [participanteId], references: [id], onDelete: Cascade)
+  fechaCreacion   DateTime      @default(now())
+  prioridad       Int           @default(0)
+
+  @@index([participanteId], name: "idx_deseo_participante")
+}
