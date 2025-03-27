@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiPlusCircle, FiX, FiAlertTriangle, FiInfo, FiArrowRight } from 'react-icons/fi';
+import { FiPlusCircle, FiX, FiInfo, FiArrowRight } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
@@ -71,9 +71,22 @@ const ExclusionesManager: React.FC<ExclusionesManagerProps> = ({
 
   const handleDeleteExclusion = async (exclusion: Exclusion) => {
     try {
+      // Confirmación antes de eliminar
+      if (!confirm(`¿Estás seguro que deseas eliminar esta exclusión?`)) {
+        return;
+      }
+      
+      console.log('Eliminando exclusión:', {
+        participanteDeId: exclusion.participanteDeId,
+        participanteAId: exclusion.participanteAId
+      });
+      
+      // Llamada al método recibido por props
       await onDeleteExclusion(exclusion.participanteDeId, exclusion.participanteAId);
+      
     } catch (error) {
       console.error('Error al eliminar exclusión:', error);
+      alert('No se pudo eliminar la exclusión. Por favor, inténtalo de nuevo.');
     }
   };
 
@@ -82,14 +95,10 @@ const ExclusionesManager: React.FC<ExclusionesManagerProps> = ({
     const participante = participantes.find(p => p.id === participanteId);
     return participante ? participante.nombre : `Participante ${participanteId}`;
   };
-
-  // Filtrar participantes confirmados para las exclusiones
-  const participantesConfirmados = participantes.filter((p) => p.estado === 'CONFIRMADO');
   
   // Determinar si hay suficientes participantes para permitir exclusiones
   const minParticipantesParaSorteo = 3;
   const hayParticipantesSuficientes = participantes.length >= minParticipantesParaSorteo;
-  const hayConfirmadosSuficientes = participantesConfirmados.length >= minParticipantesParaSorteo;
 
   return (
     <div className="space-y-6">
@@ -100,118 +109,115 @@ const ExclusionesManager: React.FC<ExclusionesManagerProps> = ({
           Por ejemplo, puedes excluir a parejas o familiares directos.
         </p>
 
-        {/* Mensaje informativo sobre requisitos de participantes */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 flex items-start mb-6">
-          <FiAlertTriangle className="text-yellow-400 mt-0.5 mr-3 flex-shrink-0" />
+        {/* Mensaje informativo sobre requisitos mínimos de participantes */}
+        {!hayParticipantesSuficientes && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 flex items-start mb-6">
+            <div>
+              <h3 className="text-sm font-medium text-yellow-800">Requisitos para gestionar exclusiones</h3>
+              <div className="mt-1 text-sm text-yellow-700">
+                <p>Necesitas al menos {minParticipantesParaSorteo} participantes para realizar el sorteo con exclusiones.</p>
+                <p className="mt-1">
+                  Actualmente tienes {participantes.length} de {minParticipantesParaSorteo} participantes.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Notas y recomendaciones */}
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-md p-4 flex">
+          <FiInfo className="text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
           <div>
-            <h3 className="text-sm font-medium text-yellow-800">Requisitos para gestionar exclusiones</h3>
-            <div className="mt-1 text-sm text-yellow-700">
-              <p>Este apartado estará disponible una vez los participantes hayan aceptado la invitación (mínimo {minParticipantesParaSorteo} participantes aceptados).</p>
-              <p className="mt-1">
-                {participantesConfirmados.length} de {minParticipantesParaSorteo} participantes han confirmado.
-              </p>
+            <h3 className="text-sm font-medium text-blue-800">Recomendaciones:</h3>
+            <div className="mt-1 text-sm text-blue-700">
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Ten cuidado de no crear exclusiones que hagan imposible el sorteo.</li>
+                <li>Cuantas más exclusiones, más restricciones para el algoritmo.</li>
+                <li>Asegúrate de que siempre exista al menos una posible asignación para cada participante.</li>
+              </ul>
             </div>
           </div>
         </div>
 
-        {hayConfirmadosSuficientes && (
-          <>
-            {/* Notas y recomendaciones (movidas arriba) */}
-            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-md p-4 flex">
-              <FiInfo className="text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
-              <div>
-                <h3 className="text-sm font-medium text-blue-800">Recomendaciones:</h3>
-                <div className="mt-1 text-sm text-blue-700">
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>Ten cuidado de no crear exclusiones que hagan imposible el sorteo.</li>
-                    <li>Cuantas más exclusiones, más restricciones para el algoritmo.</li>
-                    <li>Asegúrate de que siempre exista al menos una posible asignación para cada participante.</li>
-                  </ul>
+        <Card className="mb-6">
+          <Card.Header>
+            <Card.Title>Añadir nueva exclusión</Card.Title>
+            <Card.Description>
+              Define qué participante no podrá regalar a otro participante específico
+            </Card.Description>
+          </Card.Header>
+          <Card.Content>
+            <div className="mb-6 bg-gray-50 p-4 rounded-md border border-gray-100">
+              <div className="text-center text-sm text-gray-600 mb-2">
+                <strong>Ejemplo de cómo funciona:</strong>
+              </div>
+              <div className="flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0">
+                <div className="font-medium text-gray-800">María</div>
+                <div className="mx-2 flex items-center">
+                  <FiArrowRight className="h-4 w-4 text-red-500 mx-1" />
+                  <span className="text-xs text-red-500">no podrá regalar a</span>
+                  <FiArrowRight className="h-4 w-4 text-red-500 mx-1" />
                 </div>
+                <div className="font-medium text-gray-800">Juan</div>
+              </div>
+              <div className="text-center text-xs text-gray-500 mt-2">
+                Al añadir esta restricción, el algoritmo nunca asignará a María como amigo invisible de Juan.
               </div>
             </div>
 
-            <Card className="mb-6">
-              <Card.Header>
-                <Card.Title>Añadir nueva exclusión</Card.Title>
-                <Card.Description>
-                  Define qué participante no podrá regalar a otro participante específico
-                </Card.Description>
-              </Card.Header>
-              <Card.Content>
-                <div className="mb-6 bg-gray-50 p-4 rounded-md border border-gray-100">
-                  <div className="text-center text-sm text-gray-600 mb-2">
-                    <strong>Ejemplo de cómo funciona:</strong>
-                  </div>
-                  <div className="flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0">
-                    <div className="font-medium text-gray-800">María</div>
-                    <div className="mx-2 flex items-center">
-                      <FiArrowRight className="h-4 w-4 text-red-500 mx-1" />
-                      <span className="text-xs text-red-500">no podrá regalar a</span>
-                      <FiArrowRight className="h-4 w-4 text-red-500 mx-1" />
-                    </div>
-                    <div className="font-medium text-gray-800">Juan</div>
-                  </div>
-                  <div className="text-center text-xs text-gray-500 mt-2">
-                    Al añadir esta restricción, el algoritmo nunca asignará a María como amigo invisible de Juan.
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label htmlFor="participanteDe" className="block text-sm font-medium text-gray-700 mb-1">
-                      Este participante:
-                    </label>
-                    <select
-                      id="participanteDe"
-                      className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
-                      value={participanteDeId}
-                      onChange={(e) => setParticipanteDeId(Number(e.target.value))}
-                    >
-                      <option value={0}>Seleccionar participante</option>
-                      {participantesConfirmados.map((participante) => (
-                        <option key={`de-${participante.id}`} value={participante.id}>
-                          {participante.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="participanteA" className="block text-sm font-medium text-gray-700 mb-1">
-                      NO podrá regalar a:
-                    </label>
-                    <select
-                      id="participanteA"
-                      className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
-                      value={participanteAId}
-                      onChange={(e) => setParticipanteAId(Number(e.target.value))}
-                      disabled={participanteDeId === 0}
-                    >
-                      <option value={0}>Seleccionar participante</option>
-                      {participantesConfirmados
-                        .filter((p) => p.id !== participanteDeId)
-                        .map((participante) => (
-                          <option key={`a-${participante.id}`} value={participante.id}>
-                            {participante.nombre}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleAddExclusion}
-                  leftIcon={<FiPlusCircle />}
-                  disabled={isSubmitting || participanteDeId === 0 || participanteAId === 0}
-                  isLoading={isSubmitting}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label htmlFor="participanteDe" className="block text-sm font-medium text-gray-700 mb-1">
+                  Este participante:
+                </label>
+                <select
+                  id="participanteDe"
+                  className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                  value={participanteDeId}
+                  onChange={(e) => setParticipanteDeId(Number(e.target.value))}
                 >
-                  Añadir exclusión
-                </Button>
-              </Card.Content>
-            </Card>
-          </>
-        )}
+                  <option value={0}>Seleccionar participante</option>
+                  {participantes.map((participante) => (
+                    <option key={`de-${participante.id}`} value={participante.id}>
+                      {participante.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="participanteA" className="block text-sm font-medium text-gray-700 mb-1">
+                  NO podrá regalar a:
+                </label>
+                <select
+                  id="participanteA"
+                  className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                  value={participanteAId}
+                  onChange={(e) => setParticipanteAId(Number(e.target.value))}
+                  disabled={participanteDeId === 0}
+                >
+                  <option value={0}>Seleccionar participante</option>
+                  {participantes
+                    .filter((p) => p.id !== participanteDeId)
+                    .map((participante) => (
+                      <option key={`a-${participante.id}`} value={participante.id}>
+                        {participante.nombre}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleAddExclusion}
+              leftIcon={<FiPlusCircle />}
+              disabled={isSubmitting || participanteDeId === 0 || participanteAId === 0}
+              isLoading={isSubmitting}
+            >
+              Añadir exclusión
+            </Button>
+          </Card.Content>
+        </Card>
 
         {/* Lista de exclusiones actuales */}
         <h4 className="text-md font-medium text-gray-900 mb-2">Exclusiones actuales</h4>
@@ -228,8 +234,11 @@ const ExclusionesManager: React.FC<ExclusionesManagerProps> = ({
                 const nombreDe = exclusion.participanteDe?.nombre || getNombreParticipante(exclusion.participanteDeId);
                 const nombreA = exclusion.participanteA?.nombre || getNombreParticipante(exclusion.participanteAId);
                 
+                // Crear una key única combinando los IDs de ambos participantes
+                const uniqueKey = `${exclusion.participanteDeId}-${exclusion.participanteAId}`;
+                
                 return (
-                  <li key={exclusion.id} className="px-4 py-4 sm:px-6">
+                  <li key={uniqueKey} className="px-4 py-4 sm:px-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center ml-3">
                         <div className="flex flex-col md:flex-row md:items-center">

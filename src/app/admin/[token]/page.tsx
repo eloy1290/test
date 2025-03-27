@@ -77,7 +77,7 @@ export default function AdminPage({ params }: { params: { token: string } }) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-primary-600 border-t-transparent" role="status">
-            <span className="visually-hidden">Inicializando...</span>
+            {/* <span className="visually-hidden">Inicializando...</span> */}
           </div>
           <p className="mt-2 text-gray-600">Cargando...</p>
         </div>
@@ -173,7 +173,7 @@ export default function AdminPage({ params }: { params: { token: string } }) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full text-primary-600 border-t-transparent" role="status">
-            <span className="visually-hidden">Cargando...</span>
+            {/* <span className="visually-hidden">Cargando...</span> */}
           </div>
           <p className="mt-2 text-gray-600">Cargando información del sorteo...</p>
         </div>

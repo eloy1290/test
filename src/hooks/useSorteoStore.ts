@@ -411,9 +411,9 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
         },
         body: JSON.stringify({ participanteDeId, participanteAId }),
       });
-
+  
       console.log('Respuesta de addExclusion:', response.status, response.statusText);
-
+  
       if (!response.ok) {
         let errorMsg = 'Error al añadir exclusión';
         try {
@@ -425,10 +425,13 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
         }
         throw new Error(errorMsg);
       }
-
+  
       try {
         const data = await response.json();
         console.log('Exclusión añadida:', data);
+        
+        // CORRECCIÓN: Extraer la exclusión del objeto de respuesta
+        const nuevaExclusion = data.exclusion || data;
         
         // CAMBIO: Verificar que la exclusión no existe ya
         const existeExclusion = get().exclusiones.some(
@@ -436,7 +439,8 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
         );
         
         if (!existeExclusion) {
-          set({ exclusiones: [...get().exclusiones, data] });
+          // Usar la exclusión extraída, no todo el objeto de respuesta
+          set({ exclusiones: [...get().exclusiones, nuevaExclusion] });
         } else {
           console.log('La exclusión ya existe, no se añade de nuevo');
         }
@@ -454,16 +458,20 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
   deleteExclusion: async (token, participanteDeId, participanteAId) => {
     try {
       console.log('Eliminando exclusión:', {participanteDeId, participanteAId});
-      const response = await fetch(`/api/sorteos/${token}/exclusiones`, {
+      
+      // Uso de query parameters en lugar de body con una solicitud DELETE
+      const url = `/api/sorteos/${token}/exclusiones?participanteDeId=${participanteDeId}&participanteAId=${participanteAId}`;
+      
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ participanteDeId, participanteAId }),
+        }
+        // Sin body, los parámetros van en la URL
       });
-
+  
       console.log('Respuesta de deleteExclusion:', response.status, response.statusText);
-
+  
       if (!response.ok) {
         let errorMsg = 'Error al eliminar exclusión';
         try {
@@ -475,7 +483,7 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
         }
         throw new Error(errorMsg);
       }
-
+  
       console.log('Exclusión eliminada correctamente');
       set({
         exclusiones: get().exclusiones.filter(
