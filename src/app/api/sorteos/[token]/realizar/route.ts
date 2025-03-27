@@ -1,180 +1,163 @@
-import { NextRequest, NextResponse } from 'next/server';
+// Ruta: /src/app/api/sorteos/[token]/realizar/route.ts
+
+import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { realizarSorteo } from '@/lib/sorteoAlgorithm';
+// Importaciones correctas según tus archivos existentes
 import { sendSorteoCompletadoEmail } from '@/services/email';
-import { generateUniqueToken } from '@/lib/tokens';
+import { realizarSorteo } from '@/lib/sorteoAlgorithm';
 
-// Verificar si un sorteo existe y si el token de admin es válido
-async function verificarAccesoSorteo(token: string) {
-  const sorteo = await prisma.sorteo.findUnique({
-    where: {
-      tokenAdmin: token,
-    },
-  });
-
-  return sorteo;
-}
-
-// Realizar el sorteo
-export async function POST(
-  request: NextRequest,
+export async function GET(
+  request: Request,
   { params }: { params: { token: string } }
 ) {
+  // Acceso asíncrono correcto a params.token
+  const resolvedParams = await Promise.resolve(params);
+  const token = resolvedParams.token;
+
   try {
-    // Resolver params de forma segura para Next.js 15
-    const resolvedParams = await Promise.resolve(params);
-    const token = resolvedParams.token;
-    
-    // Verificar el token de administración
-    const sorteo = await verificarAccesoSorteo(token);
-    
+    // Verificar token (usando la estructura que ya tienes)
+    const sorteo = await prisma.sorteo.findFirst({
+      where: {
+        tokenAdmin: token
+      }
+    });
+
     if (!sorteo) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const sorteoId = sorteo.id;
-
-    // Verificar que el sorteo está en estado PENDIENTE
-    if (sorteo.estado !== 'PENDIENTE') {
       return NextResponse.json(
-        { error: 'El sorteo ya ha sido realizado o está cancelado' },
-        { status: 400 }
+        { error: 'Token inválido o expirado' },
+        { status: 401 }
       );
     }
 
-    // Verificar que hay suficientes participantes confirmados
-    const participantesConfirmados = await prisma.participante.count({
-      where: {
-        sorteoId: sorteoId,
-        estado: 'CONFIRMADO',
-      },
-    });
-
-    if (participantesConfirmados < 3) {
-      return NextResponse.json(
-        { error: 'Se necesitan al menos 3 participantes confirmados para realizar el sorteo' },
-        { status: 400 }
-      );
-    }
-
-    // Realizar el sorteo (esto crea las asignaciones en la base de datos)
-    const sorteoRealizado = await realizarSorteo(prisma, sorteoId);
-
-    if (!sorteoRealizado) {
-      return NextResponse.json(
-        { error: 'No se pudo realizar el sorteo. Verifica las exclusiones.' },
-        { status: 500 }
-      );
-    }
-
-    // Generar token para resultados del sorteo
-    const tokenResultados = generateUniqueToken();
-
-    // Actualizar el sorteo con el token de resultados
-    await prisma.sorteo.update({
-      where: {
-        id: sorteoId,
-      },
-      data: {
-        tokenResultados,
-      },
-    });
-
-    // Obtener participantes para enviar emails
+    // Obtener participantes
     const participantes = await prisma.participante.findMany({
       where: {
-        sorteoId: sorteoId,
-        estado: 'CONFIRMADO',
-      },
+        sorteoId: sorteo.id
+      }
     });
 
-    // Enviar emails a cada participante
-    for (const participante of participantes) {
-      await sendSorteoCompletadoEmail(
-        participante.email,
-        participante.nombre,
-        sorteo.nombre,
-        participante.token
-      );
+    // Obtener exclusiones
+    const exclusiones = await prisma.exclusion.findMany({
+      where: {
+        sorteoId: sorteo.id
+      }
+    });
+
+    // Verificar si se puede realizar el sorteo
+    let puedeRealizarse = true;
+    let error = '';
+    const numParticipantes = participantes.length;
+
+    if (numParticipantes < 3) {
+      puedeRealizarse = false;
+      error = 'Se necesitan al menos 3 participantes para realizar el sorteo';
+    }
+
+    // Verificar si hay exclusiones que imposibilitan el sorteo
+    if (exclusiones.length >= numParticipantes * (numParticipantes - 1) / 2) {
+      puedeRealizarse = false;
+      error = 'Hay demasiadas exclusiones para poder realizar un sorteo válido';
     }
 
     return NextResponse.json({
-      message: 'Sorteo realizado correctamente',
-      tokenResultados,
+      puedeRealizarse,
+      error,
+      participantesTotal: numParticipantes
     });
   } catch (error) {
-    console.error('Error al realizar sorteo:', error);
+    console.error('Error al verificar estado del sorteo:', error);
     return NextResponse.json(
-      { error: 'Error al realizar el sorteo' },
+      { error: 'Error al verificar el estado del sorteo' },
       { status: 500 }
     );
   }
 }
 
-// Verificar si un sorteo puede ser realizado
-export async function GET(
-  request: NextRequest,
+export async function POST(
+  request: Request,
   { params }: { params: { token: string } }
 ) {
+  // Acceso asíncrono a params.token
+  const resolvedParams = await Promise.resolve(params);
+  const token = resolvedParams.token;
+
   try {
-    // Resolver params de forma segura para Next.js 15
-    const resolvedParams = await Promise.resolve(params);
-    const token = resolvedParams.token;
+    console.log('Iniciando proceso de sorteo con token:', token);
     
-    // Verificar el token de administración
-    const sorteo = await verificarAccesoSorteo(token);
-    
+    // Verificar token
+    const sorteo = await prisma.sorteo.findFirst({
+      where: {
+        tokenAdmin: token
+      }
+    });
+
     if (!sorteo) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      console.log('Token inválido o expirado:', token);
+      return NextResponse.json(
+        { error: 'Token inválido o expirado' },
+        { status: 401 }
+      );
     }
 
-    const sorteoId = sorteo.id;
+    // Verificar si el sorteo ya ha sido realizado
+    if (sorteo.estado === 'COMPLETO') {
+      console.log('Este sorteo ya ha sido realizado:', sorteo.id);
+      return NextResponse.json(
+        { error: 'Este sorteo ya ha sido realizado' },
+        { status: 400 }
+      );
+    }
 
-    // Verificar estado del sorteo
-    const puedeRealizarse = sorteo.estado === 'PENDIENTE';
-
-    // Contar participantes confirmados
-    const participantesConfirmados = await prisma.participante.count({
+    // Confirmar automáticamente a todos los participantes pendientes
+    await prisma.participante.updateMany({
       where: {
-        sorteoId: sorteoId,
-        estado: 'CONFIRMADO',
+        sorteoId: sorteo.id,
+        estado: 'PENDIENTE'
       },
+      data: {
+        estado: 'CONFIRMADO'
+      }
     });
 
-    // Contar participantes pendientes
-    const participantesPendientes = await prisma.participante.count({
-      where: {
-        sorteoId: sorteoId,
-        estado: 'PENDIENTE',
-      },
-    });
+    // Realizar el sorteo utilizando la función existente
+    // Nota: Esta función ya realiza todas las actualizaciones en la base de datos
+    const resultado = await realizarSorteo(prisma, sorteo.id);
+    
+    if (!resultado) {
+      return NextResponse.json(
+        { error: 'No se pudo realizar el sorteo' },
+        { status: 400 }
+      );
+    }
 
-    // Contar participantes rechazados
-    const participantesRechazados = await prisma.participante.count({
+    // Obtener TODOS los participantes para enviar emails (eliminamos el filtro de estado)
+    const participantes = await prisma.participante.findMany({
       where: {
-        sorteoId: sorteoId,
-        estado: 'RECHAZADO',
-      },
+        sorteoId: sorteo.id
+      }
     });
+    
+    // Enviar emails de notificación
+    const emailPromises = participantes.map(participante => 
+      sendSorteoCompletadoEmail(
+        participante.email,
+        participante.nombre,
+        sorteo.nombre,
+        participante.token
+      )
+    );
 
-    // Verificar si hay suficientes participantes
-    const suficientesParticipantes = participantesConfirmados >= 3;
+    // Esperar a que se envíen todos los emails
+    await Promise.all(emailPromises);
 
     return NextResponse.json({
-      puedeRealizarse: puedeRealizarse && suficientesParticipantes,
-      estado: sorteo.estado,
-      participantesConfirmados,
-      participantesPendientes,
-      participantesRechazados,
-      suficientesParticipantes,
-      error: !suficientesParticipantes 
-        ? 'Se necesitan al menos 3 participantes confirmados' 
-        : (sorteo.estado !== 'PENDIENTE' ? 'El sorteo ya ha sido realizado o está cancelado' : null),
+      success: true,
+      message: 'Sorteo realizado correctamente y emails enviados'
     });
   } catch (error) {
-    console.error('Error al verificar sorteo:', error);
+    console.error('Error al realizar el sorteo:', error);
     return NextResponse.json(
-      { error: 'Error al verificar el sorteo' },
+      { error: 'Error al realizar el sorteo' },
       { status: 500 }
     );
   }

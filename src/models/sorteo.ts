@@ -82,4 +82,5 @@ export interface EstadoVerificacionSorteo {
   participantesRechazados: number;
   suficientesParticipantes: boolean;
   error: string | null;
+  razon?: string; 
 }

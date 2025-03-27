@@ -44,8 +44,9 @@ export default function AccesoPage({ params }: { params: { token: string } }) {
     // Manejar los parámetros de forma asíncrona
     const resolveToken = async () => {
       try {
-        // Acceder al token de forma segura
-        const resolvedToken = params.token;
+        // En lugar de acceder directamente a params.token, lo hacemos mediante await Promise.resolve
+        const resolvedParams = await Promise.resolve(params);
+        const resolvedToken = resolvedParams.token;
         setToken(resolvedToken);
       } catch (error) {
         console.error("Error al resolver el token:", error);
@@ -73,6 +74,7 @@ export default function AccesoPage({ params }: { params: { token: string } }) {
     
     const fetchInfo = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch(`/api/participantes/${token}`);
 
         if (!response.ok) {

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiUsers, FiList, FiSettings, FiGift, FiAlertTriangle, FiCheckCircle, FiClock } from 'react-icons/fi';
+import { FiUsers, FiList, FiGift, FiAlertTriangle, FiCheckCircle, FiClock, FiInfo } from 'react-icons/fi';
+import { FaEuroSign } from 'react-icons/fa'; // Importamos el icono de euro de Font Awesome
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import ParticipantesList from '@/components/admin/ParticipantesList';
@@ -33,10 +34,11 @@ export default function AdminPage({ params }: { params: { token: string } }) {
     resolveToken();
   }, []); // Solo ejecutar una vez al montar
   
+  // Usar el hook correctamente
   const { 
     sorteo, participantes, exclusiones, puedeRealizar, estadoSorteo, isLoading, error,
     fetchSorteo, fetchParticipantes, fetchExclusiones, verificarEstadoSorteo,
-    addParticipante, editParticipante, deleteParticipante, resendInvitation,
+    addParticipante, editParticipante, deleteParticipante,
     addExclusion, deleteExclusion, realizarSorteo
   } = useSorteoStore();
   
@@ -94,8 +96,6 @@ export default function AdminPage({ params }: { params: { token: string } }) {
     }
   };
 
-  // Resto del componente sin cambios...
-  
   // Manejar editar participante
   const handleEditParticipante = async (id: number, datos: { nombre: string; email: string }) => {
     if (!sorteo) return;
@@ -114,18 +114,6 @@ export default function AdminPage({ params }: { params: { token: string } }) {
     
     try {
       await deleteParticipante(token, id);
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
-    }
-  };
-
-  // Manejar reenvío de invitación
-  const handleResendInvitation = async (id: number) => {
-    if (!sorteo) return;
-    
-    try {
-      await resendInvitation(token, id);
-      alert('Invitación reenviada correctamente');
     } catch (error: any) {
       alert(`Error: ${error.message}`);
     }
@@ -156,7 +144,7 @@ export default function AdminPage({ params }: { params: { token: string } }) {
   // Realizar sorteo
   const handleRealizarSorteo = async () => {
     if (!sorteo) return;
-    if (!confirm('¿Estás seguro de realizar el sorteo? Esta acción no se puede deshacer y se enviarán emails a todos los participantes.')) return;
+    if (!confirm('¿Estás seguro de realizar el sorteo? Esta acción no se puede deshacer y se enviarán emails a todos los participantes con su asignación.')) return;
 
     setRealizandoSorteo(true);
 
@@ -215,6 +203,12 @@ export default function AdminPage({ params }: { params: { token: string } }) {
   if (!sorteo) {
     return null; // No debería llegar aquí si isLoading está en false
   }
+
+  // Contamos número de participantes para el botón de realizar sorteo
+  const numParticipantes = participantes.length;
+  
+  // Comprobar si podemos realizar el sorteo (mínimo 3 participantes)
+  const puedeRealizarSorteo = numParticipantes >= 3;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -275,7 +269,14 @@ export default function AdminPage({ params }: { params: { token: string } }) {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Presupuesto</p>
-                <p className="font-medium">{sorteo.presupuesto ? `${sorteo.presupuesto} €` : 'No especificado'}</p>
+                <p className="font-medium flex items-center">
+                  {sorteo.presupuesto ? (
+                    <>
+                      <FaEuroSign className="mr-1" /> {/* Icono de Euro */}
+                      {sorteo.presupuesto}
+                    </>
+                  ) : 'No especificado'}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Creado por</p>
@@ -293,41 +294,31 @@ export default function AdminPage({ params }: { params: { token: string } }) {
               )}
             </div>
             
-            {/* Estadísticas y botón de realizar sorteo */}
-            {sorteo.estado === 'PENDIENTE' && estadoSorteo && (
+            {/* Botón de realizar sorteo */}
+            {sorteo.estado === 'PENDIENTE' && (
               <div className="mt-6 border-t border-gray-200 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Participantes confirmados</p>
-                    <p className="font-medium text-green-600">{estadoSorteo.participantesConfirmados}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Participantes pendientes</p>
-                    <p className="font-medium text-yellow-600">{estadoSorteo.participantesPendientes}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Participantes rechazados</p>
-                    <p className="font-medium text-red-600">{estadoSorteo.participantesRechazados}</p>
-                  </div>
+                <div className="bg-yellow-50 p-4 mb-4 rounded-md border border-yellow-200">
+                  <p className="text-yellow-800 text-sm">
+                    <FiInfo className="inline mr-1" />
+                    Añade todos los participantes y cuando estés listo, haz clic en "Realizar sorteo" para asignar los 
+                    amigos invisibles y enviar emails a todos los participantes con su asignación.
+                  </p>
                 </div>
                 
-                <div className="mt-4">
+                <div className="text-center">
                   <Button
                     onClick={handleRealizarSorteo}
-                    disabled={!puedeRealizar || realizandoSorteo}
+                    disabled={!puedeRealizarSorteo || realizandoSorteo}
                     isLoading={realizandoSorteo}
                     leftIcon={<FiGift />}
-                    fullWidth
+                    size="lg"
+                    variant="primary"
+                    className="px-8"
                   >
-                    Realizar sorteo
+                    {numParticipantes >= 3
+                      ? `Realizar sorteo (${numParticipantes} participantes)`
+                      : `Necesitas al menos 3 participantes (${numParticipantes}/3)`}
                   </Button>
-                  
-                  {!puedeRealizar && estadoSorteo.error && (
-                    <p className="mt-2 text-sm text-red-600">
-                      <FiAlertTriangle className="inline mr-1" />
-                      {estadoSorteo.error}
-                    </p>
-                  )}
                 </div>
               </div>
             )}
@@ -370,7 +361,6 @@ export default function AdminPage({ params }: { params: { token: string } }) {
               onAdd={handleAddParticipante}
               onEdit={handleEditParticipante}
               onDelete={handleDeleteParticipante}
-              onResendInvitation={handleResendInvitation}
             />
           )}
 

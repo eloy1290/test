@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import prisma from './db';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
@@ -21,7 +22,8 @@ export function generateUniqueToken(): string {
  * @param expiresIn - Tiempo de expiración (por defecto, 24 horas)
  */
 export function generateJWT(payload: any, expiresIn = '24h'): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn });
+    // Forzamos el tipo correcto usando "as any" para evitar errores de tipado
+    return jwt.sign(payload, JWT_SECRET, { expiresIn } as any);
 }
 
 /**
@@ -48,4 +50,38 @@ export function generateTokenUrl(baseUrl: string, token: string): string {
     ? baseUrl.slice(0, -1) 
     : baseUrl;
     return `${normalizedBaseUrl}/acceso/${token}`;
+}
+
+/**
+ * Verifica si un token de administración de sorteo es válido
+ * @param token Token de administración del sorteo
+ * @returns El sorteo encontrado o null si no existe
+ */
+export async function verificarTokenSorteo(token: string) {
+  try {
+    // Buscar el sorteo por el token de administración
+    const sorteo = await prisma.sorteo.findFirst({
+      where: {
+        tokenAdmin: token
+      }
+    });
+
+    // Si no se encuentra el sorteo o el token no coincide, retornar null
+    if (!sorteo) {
+      console.log(`No se encontró sorteo con token: ${token}`);
+      return null;
+    }
+
+    // Si el sorteo tiene fecha de expiración y ya pasó, retornar null
+    if (sorteo.fechaExpiracion && new Date() > new Date(sorteo.fechaExpiracion)) {
+      console.log(`El token del sorteo ha expirado: ${token}`);
+      return null;
+    }
+
+    // Retornar el sorteo encontrado
+    return sorteo;
+  } catch (error) {
+    console.error('Error al verificar token de sorteo:', error);
+    return null;
+  }
 }

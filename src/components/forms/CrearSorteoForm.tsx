@@ -89,7 +89,7 @@ const CrearSorteoForm: React.FC<CrearSorteoFormProps> = ({ onSubmit }) => {
             id="presupuesto"
             type="number"
             placeholder="Ej: 20"
-            leftIcon={<FiDollarSign />}
+            // leftIcon={<FiDollarSign />}
             hint="Opcional. Ayuda a los participantes a saber cuánto gastar."
             error={errors.presupuesto?.message}
             {...register('presupuesto')}

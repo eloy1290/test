@@ -1,10 +1,9 @@
 import Link from 'next/link';
-import Image from 'next/image';
-import { FiGift, FiUsers, FiLock, FiCheckCircle, FiArrowRight } from 'react-icons/fi';
+import { FiGift, FiUsers, FiLock, FiCheckCircle, FiArrowRight, FiShield, FiTrash2 } from 'react-icons/fi';
 
 export const metadata = {
-  title: 'Amigo Invisible - Organiza tu sorteo fácilmente',
-  description: 'Organiza tu sorteo de Amigo Invisible de forma fácil y segura. Invita a tus amigos, familiares o compañeros de trabajo y gestiona todo online.',
+  title: 'Amigo Invisible - Organiza tu sorteo fácilmente sin registro',
+  description: 'Organiza tu sorteo de Amigo Invisible de forma fácil, segura y sin registro. Invita a tus amigos, familiares o compañeros de trabajo y gestiona todo online sin guardar tus datos.',
 };
 
 export default function Home() {
@@ -20,8 +19,9 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex items-center">
-              <Link href="/crear" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+              <Link href="/crear" className="btn-primary">
                 Crear sorteo
+                <FiArrowRight className="ml-2" />
               </Link>
             </div>
           </div>
@@ -31,35 +31,29 @@ export default function Home() {
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-primary-50 to-white pt-16 pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-            <div className="sm:text-center md:max-w-2xl md:mx-auto lg:col-span-6 lg:text-left">
-              <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                <span className="block">Organiza tu</span>
-                <span className="block text-primary-600">Amigo Invisible</span>
-                <span className="block">online y gratis</span>
-              </h1>
-              <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
-                La forma más fácil y segura de organizar tu sorteo de Amigo Invisible con amigos, familiares o compañeros de trabajo. ¡Sin complicaciones!
-              </p>
-              <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
-                <Link href="/crear" className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                  Comenzar ahora
-                  <FiArrowRight className="ml-2" />
-                </Link>
-              </div>
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="flex justify-center mb-6 space-x-3">
+              <span className="privacy-pill">
+                <FiShield className="mr-1" /> Sin registro
+              </span>
+              <span className="privacy-pill">
+                <FiTrash2 className="mr-1" /> No guardamos tus datos
+              </span>
             </div>
-            <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
-              <div className="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
-                <div className="relative block w-full bg-white rounded-lg overflow-hidden">
-                  <Image
-                    src="/images/amigo-invisible-hero.jpg"
-                    alt="Amigos intercambiando regalos"
-                    width={600}
-                    height={400}
-                    className="w-full"
-                  />
-                </div>
-              </div>
+            
+            <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+              <span className="block">Organiza tu</span>
+              <span className="block text-primary-600">Amigo Invisible</span>
+              <span className="block">online y gratis</span>
+            </h1>
+            <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-xl">
+              La forma más fácil y segura de organizar tu sorteo de Amigo Invisible con amigos, familiares o compañeros de trabajo. ¡Sin complicaciones y sin registro!
+            </p>
+            <div className="mt-8 flex justify-center">
+              <Link href="/crear" className="btn-primary btn-large">
+                Comenzar ahora
+                <FiArrowRight className="ml-2" />
+              </Link>
             </div>
           </div>
         </div>
@@ -68,80 +62,62 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:text-center">
+          <div className="text-center mb-16">
             <h2 className="text-base text-primary-600 font-semibold tracking-wide uppercase">Características</h2>
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               Todo lo que necesitas para tu Amigo Invisible
             </p>
-            <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-              Organiza tu sorteo en minutos con todas las herramientas que necesitas.
+            <p className="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
+              Organiza tu sorteo en minutos con todas las herramientas que necesitas, sin registros y con privacidad total.
             </p>
           </div>
 
-          <div className="mt-16">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-primary-500 rounded-md shadow-lg">
-                        <FiGift className="h-6 w-6 text-white" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">Sorteo automático</h3>
-                    <p className="mt-5 text-base text-gray-500">
-                      Crea el sorteo en segundos y deja que nuestro algoritmo se encargue de las asignaciones respetando las exclusiones que establezcas.
-                    </p>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="feature-card">
+              <div className="feature-icon">
+                <FiGift className="h-6 w-6" />
               </div>
-
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-primary-500 rounded-md shadow-lg">
-                        <FiUsers className="h-6 w-6 text-white" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">Invitaciones sencillas</h3>
-                    <p className="mt-5 text-base text-gray-500">
-                      Invita a los participantes por email con un simple clic. Cada uno recibirá un enlace único para participar.
-                    </p>
-                  </div>
-                </div>
+              <div className="feature-content">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Sorteo automático</h3>
+                <p className="text-gray-500">
+                  Crea el sorteo en segundos y deja que nuestro algoritmo se encargue de las asignaciones respetando las exclusiones que establezcas.
+                </p>
               </div>
+            </div>
 
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-primary-500 rounded-md shadow-lg">
-                        <FiLock className="h-6 w-6 text-white" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">Privacidad total</h3>
-                    <p className="mt-5 text-base text-gray-500">
-                      Las asignaciones son privadas y seguras. Ni siquiera el administrador puede ver quién le tocó a quién.
-                    </p>
-                  </div>
-                </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <FiUsers className="h-6 w-6" />
               </div>
+              <div className="feature-content">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Invitaciones sencillas</h3>
+                <p className="text-gray-500">
+                  Invita a los participantes por email con un simple clic. Cada uno recibirá un enlace único para participar.
+                </p>
+              </div>
+            </div>
 
-              <div className="pt-6">
-                <div className="flow-root bg-gray-50 rounded-lg px-6 pb-8">
-                  <div className="-mt-6">
-                    <div>
-                      <span className="inline-flex items-center justify-center p-3 bg-primary-500 rounded-md shadow-lg">
-                        <FiCheckCircle className="h-6 w-6 text-white" />
-                      </span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-medium text-gray-900 tracking-tight">Lista de deseos</h3>
-                    <p className="mt-5 text-base text-gray-500">
-                      Cada participante puede crear su lista de deseos para facilitar la elección del regalo perfecto.
-                    </p>
-                  </div>
-                </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <FiLock className="h-6 w-6" />
+              </div>
+              <div className="feature-content">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Privacidad total</h3>
+                <p className="text-gray-500">
+                  Las asignaciones son privadas y seguras. Ni siquiera el administrador puede ver quién le tocó a quién. Los emails se eliminan al finalizar el sorteo.
+                </p>
+              </div>
+            </div>
+
+            <div className="feature-card">
+              <div className="feature-icon">
+                <FiCheckCircle className="h-6 w-6" />
+              </div>
+              <div className="feature-content">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Lista de deseos</h3>
+                <p className="text-gray-500">
+                  Cada participante puede crear su lista de deseos para facilitar la elección del regalo perfecto.
+                </p>
               </div>
             </div>
           </div>
@@ -151,61 +127,85 @@ export default function Home() {
       {/* How it works Section */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:text-center">
+          <div className="text-center mb-16">
             <h2 className="text-base text-primary-600 font-semibold tracking-wide uppercase">Cómo funciona</h2>
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               En 4 sencillos pasos
             </p>
           </div>
 
-          <div className="mt-12">
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white font-bold text-xl">
-                  1
-                </div>
-                <div className="ml-16">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Crea el sorteo</h3>
-                  <p className="mt-2 text-base text-gray-500">
-                    Define el nombre, presupuesto y fecha límite para tu sorteo de Amigo Invisible.
-                  </p>
-                </div>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 mb-12">
+            <div className="step-card">
+              <div className="step-number">
+                1
               </div>
-
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white font-bold text-xl">
-                  2
-                </div>
-                <div className="ml-16">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Invita participantes</h3>
-                  <p className="mt-2 text-base text-gray-500">
-                    Añade a tus amigos, familiares o compañeros e invítalos por email.
-                  </p>
-                </div>
+              <div className="step-content">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Crea el sorteo</h3>
+                <p className="text-gray-500">
+                  Define el nombre, presupuesto y fecha límite para tu sorteo de Amigo Invisible.
+                </p>
               </div>
+            </div>
 
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white font-bold text-xl">
-                  3
-                </div>
-                <div className="ml-16">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">Realiza el sorteo</h3>
-                  <p className="mt-2 text-base text-gray-500">
-                    Una vez que todos confirmen, realiza el sorteo automáticamente con un clic.
-                  </p>
-                </div>
+            <div className="step-card">
+              <div className="step-number">
+                2
               </div>
+              <div className="step-content">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Invita participantes</h3>
+                <p className="text-gray-500">
+                  Añade a tus amigos, familiares o compañeros e invítalos por email.
+                </p>
+              </div>
+            </div>
 
-              <div className="relative">
-                <div className="absolute flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white font-bold text-xl">
-                  4
-                </div>
-                <div className="ml-16">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">¡A regalar!</h3>
-                  <p className="mt-2 text-base text-gray-500">
-                    Cada participante recibe su asignación y puede ver la lista de deseos de su amigo invisible.
-                  </p>
-                </div>
+            <div className="step-card">
+              <div className="step-number">
+                3
+              </div>
+              <div className="step-content">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Realiza el sorteo</h3>
+                <p className="text-gray-500">
+                  Una vez que todos confirmen, realiza el sorteo automáticamente con un clic.
+                </p>
+              </div>
+            </div>
+
+            <div className="step-card">
+              <div className="step-number">
+                4
+              </div>
+              <div className="step-content">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">¡A regalar!</h3>
+                <p className="text-gray-500">
+                  Cada participante recibe su asignación y puede ver la lista de deseos de su amigo invisible.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-center">
+            <Link href="/crear" className="btn-primary btn-large">
+              Crear mi sorteo
+              <FiArrowRight className="ml-2" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Security Badge Section */}
+      <section className="py-12 bg-white">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-primary-50 rounded-lg p-6 shadow-sm border border-primary-100">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <FiShield className="h-10 w-10 text-primary-600" />
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">Sin registro y máxima privacidad</h3>
+                <p className="mt-2 text-gray-600">
+                  No necesitas crear una cuenta ni recordar contraseñas. Todos los emails utilizados para las invitaciones se eliminan automáticamente al finalizar el sorteo. Tu privacidad es nuestra prioridad.
+                </p>
               </div>
             </div>
           </div>
@@ -221,9 +221,9 @@ export default function Home() {
               <span className="block">Crea tu sorteo de Amigo Invisible hoy mismo</span>
             </h2>
             <div className="mt-8">
-              <Link href="/crear" className="inline-flex items-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-700 focus:ring-white">
+              <Link href="/crear" className="btn-white btn-large">
                 Crear mi sorteo
-                <FiArrowRight className="ml-2" />
+                <FiArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </div>
           </div>
@@ -237,7 +237,7 @@ export default function Home() {
             <div>
               <h3 className="text-white text-xl font-bold">AmigoInvisible</h3>
               <p className="mt-2 text-gray-300 text-sm">
-                La forma más fácil y segura de organizar tu sorteo de Amigo Invisible.
+                La forma más fácil y segura de organizar tu sorteo de Amigo Invisible. Sin registro y sin almacenar tus datos.
               </p>
             </div>
             <div className="flex flex-col md:items-end">

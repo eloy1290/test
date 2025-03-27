@@ -1,9 +1,75 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Colores actualizados - tonos más modernos */
+  --primary-50: #f0f7ff;
+  --primary-100: #dcedff;
+  --primary-200: #baddff;
+  --primary-300: #85c6ff;
+  --primary-400: #4aabff;
+  --primary-500: #1a91ff;
+  --primary-600: #0077e6;
+  --primary-700: #0062bd;
+  --primary-800: #00509a;
+  --primary-900: #003a6b;
+  
+  --secondary-50: #fcf5ff;
+  --secondary-100: #f4e5ff;
+  --secondary-200: #e9d0ff;
+  --secondary-300: #d8adff;
+  --secondary-400: #c078ff;
+  --secondary-500: #a347ff;
+  --secondary-600: #8c28eb;
+  --secondary-700: #7719c2;
+  --secondary-800: #62189d;
+  --secondary-900: #471474;
+}
+
+/* Asignamos nuestras variables personalizadas a las clases que Tailwind utilizará */
+.text-primary-500 {
+  color: var(--primary-500);
+}
+.text-primary-600 {
+  color: var(--primary-600);
+}
+.text-primary-700 {
+  color: var(--primary-700);
+}
+
+.bg-primary-50 {
+  background-color: var(--primary-50);
+}
+.bg-primary-100 {
+  background-color: var(--primary-100);
+}
+.bg-primary-500 {
+  background-color: var(--primary-500);
+}
+.bg-primary-600 {
+  background-color: var(--primary-600);
+}
+.bg-primary-700 {
+  background-color: var(--primary-700);
+}
+
+.hover\:bg-primary-500:hover {
+  background-color: var(--primary-500);
+}
+.hover\:bg-primary-600:hover {
+  background-color: var(--primary-600);
+}
+
+.focus\:ring-primary-500:focus {
+  --tw-ring-color: var(--primary-500);
+}
+
+.border-primary-100 {
+  border-color: var(--primary-100);
 }
 
 @theme inline {
@@ -24,4 +90,45 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Estilos de componentes personalizados */
+.feature-card {
+  @apply bg-white rounded-lg shadow-md p-6 h-full relative overflow-hidden border border-gray-100;
+}
+
+.feature-icon {
+  @apply absolute top-0 left-0 w-12 h-12 flex items-center justify-center bg-primary-500 text-white rounded-br-lg;
+}
+
+.feature-content {
+  @apply pt-10;
+}
+
+.step-card {
+  @apply bg-white rounded-lg shadow-md p-6 border border-gray-100 relative;
+}
+
+.step-number {
+  @apply absolute top-4 left-4 w-10 h-10 flex items-center justify-center bg-primary-500 text-white font-bold rounded-full;
+}
+
+.step-content {
+  @apply ml-16;
+}
+
+.privacy-pill {
+  @apply inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full bg-green-100 text-green-800 mr-2;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center px-5 py-3 rounded-lg bg-primary-600 text-white font-bold shadow-md transition-all hover:bg-primary-500 hover:shadow-lg transform hover:scale-105;
+}
+
+.btn-large {
+  @apply px-6 py-4 text-lg;
+}
+
+.btn-white {
+  @apply inline-flex items-center justify-center px-5 py-3 rounded-lg bg-white text-primary-600 font-bold shadow-md transition-all hover:bg-gray-50 hover:shadow-lg transform hover:scale-105;
 }

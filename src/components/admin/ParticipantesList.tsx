@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiEdit2, FiTrash2, FiMail, FiPlusCircle, FiX, FiSave, FiUserCheck, FiUserX } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlusCircle, FiX, FiSave } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
@@ -17,7 +17,6 @@ interface ParticipantesListProps {
   onAdd: (participante: { nombre: string; email: string }) => Promise<void>;
   onEdit: (id: number, participante: { nombre: string; email: string }) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
-  onResendInvitation: (id: number) => Promise<void>;
 }
 
 const ParticipantesList: React.FC<ParticipantesListProps> = ({
@@ -25,7 +24,6 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
   onAdd,
   onEdit,
   onDelete,
-  onResendInvitation,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -77,53 +75,25 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
     resetForm();
   };
 
-  const handleResendInvitation = async (id: number) => {
-    try {
-      await onResendInvitation(id);
-    } catch (error) {
-      console.error('Error al reenviar invitación:', error);
-    }
-  };
-
-  const getStatusBadge = (estado: Participante['estado']) => {
-    switch (estado) {
-      case 'CONFIRMADO':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <FiUserCheck className="mr-1" />
-            Confirmado
-          </span>
-        );
-      case 'RECHAZADO':
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-            <FiUserX className="mr-1" />
-            Rechazado
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            Pendiente
-          </span>
-        );
-    }
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Participantes</h3>
-        {!showAddForm && (
-          <Button
-            onClick={() => setShowAddForm(true)}
-            leftIcon={<FiPlusCircle />}
-            variant="primary"
-            size="sm"
-          >
-            Añadir participante
-          </Button>
-        )}
+      {/* Botones de acción principales */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900">Participantes ({participantes.length})</h3>
+        <div className="w-full md:w-auto">
+          {!showAddForm && (
+            <Button
+              onClick={() => setShowAddForm(true)}
+              leftIcon={<FiPlusCircle />}
+              variant="primary"
+              size="md"
+              fullWidth
+              className="sm:w-auto"
+            >
+              Añadir participante
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Formulario de añadir participante */}
@@ -184,8 +154,8 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
               onClick={() => setShowAddForm(true)}
               leftIcon={<FiPlusCircle />}
               variant="outline"
-              size="sm"
-              className="mt-2"
+              size="md"
+              className="mt-4"
             >
               Añadir el primer participante
             </Button>
@@ -202,9 +172,6 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado
-                </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
@@ -214,7 +181,7 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
               {participantes.map((participante) => (
                 <tr key={participante.id}>
                   {editingId === participante.id ? (
-                    <td colSpan={4} className="px-6 py-4">
+                    <td colSpan={3} className="px-6 py-4">
                       <form onSubmit={handleEdit} className="space-y-2">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <Input
@@ -260,9 +227,6 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">{participante.email}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(participante.estado)}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
                           <Button
@@ -273,15 +237,6 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
                             title="Editar"
                           >
                             <FiEdit2 />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleResendInvitation(participante.id)}
-                            aria-label="Reenviar invitación"
-                            title="Reenviar invitación"
-                          >
-                            <FiMail />
                           </Button>
                           <Button
                             variant="ghost"
@@ -301,6 +256,20 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Botón para añadir más participantes (siempre visible al final) */}
+      {participantes.length > 0 && !showAddForm && (
+        <div className="flex justify-center mt-4">
+          <Button
+            onClick={() => setShowAddForm(true)}
+            leftIcon={<FiPlusCircle />}
+            variant="outline"
+            size="sm"
+          >
+            Añadir otro participante
+          </Button>
         </div>
       )}
     </div>

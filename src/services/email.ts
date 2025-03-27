@@ -39,6 +39,7 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
 
 /**
  * Envía invitación para participar en un sorteo
+ * (Modificada para no enviar emails de invitación)
  */
 export async function sendInvitationEmail(
   email: string,
@@ -47,24 +48,9 @@ export async function sendInvitationEmail(
   creadorNombre: string,
   token: string
 ): Promise<boolean> {
-  const subject = `Invitación al Amigo Invisible: ${sorteoNombre}`;
-  const accessUrl = generateTokenUrl(appUrl, token);
-  
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #333;">¡Hola ${nombre}!</h2>
-      <p>${creadorNombre} te ha invitado a participar en el sorteo de Amigo Invisible: <strong>${sorteoNombre}</strong>.</p>
-      <p>Haz clic en el siguiente botón para participar:</p>
-      <p style="text-align: center;">
-        <a href="${accessUrl}" style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Participar en el sorteo</a>
-      </p>
-      <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
-      <p>${accessUrl}</p>
-      <p style="color: #666; font-size: 0.8em;">Este enlace es personal y único para ti. No lo compartas con nadie.</p>
-    </div>
-  `;
-  
-  return sendEmail(email, subject, html);
+  // No enviamos email de invitación, simplemente devolvemos true
+  console.log(`[OMITIDO] Email de invitación para ${nombre} (${email}) al sorteo ${sorteoNombre}`);
+  return true;
 }
 
 /**

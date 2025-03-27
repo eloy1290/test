@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 
-// Confirmar participación en el sorteo
+// Confirmar participación en el sorteo (ahora automáticamente)
 export async function POST(
   request: NextRequest,
   { params }: { params: { participanteToken: string } }
@@ -36,32 +36,39 @@ export async function POST(
       );
     }
 
-    // Verificar que el participante esté pendiente
-    if (participante.estado !== 'PENDIENTE') {
-      return NextResponse.json(
-        { error: 'Ya has confirmado o rechazado este sorteo' },
-        { status: 400 }
-      );
+    // Actualizamos el estado automáticamente a CONFIRMADO sin mostrar mensajes
+    // de error si ya estaba confirmado
+    if (participante.estado === 'PENDIENTE') {
+      const participanteActualizado = await prisma.participante.update({
+        where: {
+          id: participante.id,
+        },
+        data: {
+          estado: 'CONFIRMADO',
+        },
+      });
+
+      return NextResponse.json({
+        message: 'Participación confirmada automáticamente',
+        participante: {
+          id: participanteActualizado.id,
+          nombre: participanteActualizado.nombre,
+          estado: participanteActualizado.estado,
+        },
+      });
+    } else {
+      // Si ya estaba confirmado o rechazado, simplemente devolvemos el estado actual
+      return NextResponse.json({
+        message: participante.estado === 'CONFIRMADO' 
+          ? 'Ya estabas confirmado para este sorteo' 
+          : 'Has rechazado participar en este sorteo',
+        participante: {
+          id: participante.id,
+          nombre: participante.nombre,
+          estado: participante.estado,
+        },
+      });
     }
-
-    // Actualizar estado del participante
-    const participanteActualizado = await prisma.participante.update({
-      where: {
-        id: participante.id,
-      },
-      data: {
-        estado: 'CONFIRMADO',
-      },
-    });
-
-    return NextResponse.json({
-      message: 'Participación confirmada correctamente',
-      participante: {
-        id: participanteActualizado.id,
-        nombre: participanteActualizado.nombre,
-        estado: participanteActualizado.estado,
-      },
-    });
   } catch (error) {
     console.error('Error al confirmar participación:', error);
     return NextResponse.json(
