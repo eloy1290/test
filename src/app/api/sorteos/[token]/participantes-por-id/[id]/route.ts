@@ -96,8 +96,8 @@ export async function PUT(
         id: participanteId,
       },
       data: {
-        nombre: data.nombre,
-        email: data.email,
+        nombre: data.nombre || participanteExistente.nombre,
+        email: data.email || participanteExistente.email,
       },
     });
 
@@ -108,6 +108,9 @@ export async function PUT(
         nombre: participanteActualizado.nombre,
         email: participanteActualizado.email,
         estado: participanteActualizado.estado,
+        fechaRegistro: participanteActualizado.fechaRegistro.toISOString(),
+        token: participanteActualizado.token,
+        sorteoId: participanteActualizado.sorteoId
       },
     });
   } catch (error) {

@@ -1,6 +1,30 @@
 import { create } from 'zustand';
 import { SorteoInfo, Participante, Exclusion, EstadoVerificacionSorteo } from '@/models/sorteo';
 
+// Define el tipo para el resultado de addParticipante
+export interface AddParticipanteResult {
+  success: boolean;
+  isDuplicate?: boolean;
+  message?: string;
+}
+
+// Tipo para el resultado de editParticipante
+export interface EditParticipanteResult {
+  success: boolean;
+  isDuplicate?: boolean;
+  notFound?: boolean;
+  isAlternative?: boolean;
+  validationErrors?: { [key: string]: string[] };
+  message?: string;
+}
+
+// Define el tipo para el resultado de eliminar un participante
+export interface DeleteParticipanteResult {
+  success: boolean;
+  notFound?: boolean;
+  message?: string;
+}
+
 interface SorteoState {
   sorteo: SorteoInfo | null;
   participantes: Participante[];
@@ -15,9 +39,9 @@ interface SorteoState {
   fetchParticipantes: (token: string) => Promise<void>;
   fetchExclusiones: (token: string) => Promise<void>;
   verificarEstadoSorteo: (token: string) => Promise<void>;
-  addParticipante: (token: string, participante: { nombre: string; email: string }) => Promise<void>;
-  editParticipante: (token: string, id: number, datos: { nombre: string; email: string }) => Promise<void>;
-  deleteParticipante: (token: string, id: number) => Promise<void>;
+  addParticipante: (token: string, participante: { nombre: string; email: string }) => Promise<AddParticipanteResult>;
+  editParticipante: (token: string, id: number, datos: { nombre: string; email: string }) => Promise<EditParticipanteResult>;
+  deleteParticipante: (token: string, id: number) => Promise<DeleteParticipanteResult>;
   addExclusion: (token: string, participanteDeId: number, participanteAId: number) => Promise<void>;
   deleteExclusion: (token: string, participanteDeId: number, participanteAId: number) => Promise<void>;
   realizarSorteo: (token: string) => Promise<void>;
@@ -272,9 +296,32 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
         },
         body: JSON.stringify(participante),
       });
-
+  
       console.log('Respuesta de addParticipante:', response.status, response.statusText);
-
+  
+      // Manejo específico para correo duplicado
+      if (response.status === 400) {
+        const errorData = await response.json();
+        
+        // Verificar si el error es de correo duplicado
+        if (errorData.error && (
+            errorData.error.includes('email') || 
+            errorData.error.includes('correo') ||
+            errorData.error.includes('duplicado') ||
+            errorData.error.includes('ya existe')
+          )) {
+          // Retornamos un objeto con información sobre el caso de correo duplicado
+          return {
+            success: false,
+            isDuplicate: true,
+            message: `El correo ${participante.email} ya está registrado en este sorteo.`
+          };
+        }
+        
+        // Si es otro tipo de error 400
+        throw new Error(errorData.error || 'Error al añadir participante');
+      }
+  
       if (!response.ok) {
         let errorMsg = 'Error al añadir participante';
         try {
@@ -286,13 +333,12 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
         }
         throw new Error(errorMsg);
       }
-
+  
       try {
         const data = await response.json();
         console.log('Participante añadido - respuesta completa:', data);
         
-        // CORRECCIÓN: Extraer el objeto participante de la respuesta
-        // La estructura esperada es {message: string, participante: objeto}
+        // Extraer el objeto participante de la respuesta
         const nuevoParticipante = data.participante || data;
         
         console.log('Nuevo participante extraído:', nuevoParticipante);
@@ -301,7 +347,7 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
           console.error('Estructura de respuesta inesperada en addParticipante:', data);
           // Si no podemos extraer el participante, recargamos la lista
           await get().fetchParticipantes(token);
-          return;
+          return { success: true };
         }
         
         // Verificar que el participante ya no existe antes de añadirlo
@@ -314,10 +360,13 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
           // Recargar la lista de participantes para actualizar
           await get().fetchParticipantes(token);
         }
+        
+        return { success: true };
       } catch (jsonError) {
         console.error('Error al parsear JSON en addParticipante:', jsonError);
         // Recargar la lista de participantes para asegurar consistencia
         await get().fetchParticipantes(token);
+        return { success: true };
       }
     } catch (error: any) {
       console.error('Error en addParticipante:', error);
@@ -327,77 +376,241 @@ const useSorteoStore = create<SorteoState>((set, get) => ({
 
   editParticipante: async (token, id, datos) => {
     try {
-      console.log('Editando participante:', id, datos);
-      const response = await fetch(`/api/sorteos/${token}/participantes/${id}`, {
+      // Convertir ID a número si es necesario para asegurar consistencia
+      const participanteId = Number(id);
+      
+      // Construir la URL usando una plantilla consistente
+      const url = `/api/sorteos/${token}/participantes-por-id/${id}`;
+      
+      console.log(`Editando participante ${participanteId}, URL: ${url}`);
+      console.log('Datos a enviar:', datos);
+      
+      const response = await fetch(url, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(datos),
+        // Desactivar la caché para evitar problemas
+        cache: 'no-store'
       });
-
-      console.log('Respuesta de editParticipante:', response.status, response.statusText);
-
-      if (!response.ok) {
-        let errorMsg = 'Error al editar participante';
-        try {
-          const errorData = await response.json();
-          console.error('Error en editParticipante:', errorData);
-          errorMsg = errorData.error || errorMsg;
-        } catch (e) {
-          console.error('No se pudo parsear la respuesta de error en editParticipante');
+  
+      console.log(`Respuesta de editParticipante: ${response.status} ${response.statusText}`);
+      console.log(`URL completa: ${response.url}`);
+  
+      // Primero verificamos si la respuesta tiene contenido antes de intentar parsearla
+      const contentType = response.headers.get("content-type");
+      const hasJsonContent = contentType && contentType.includes("application/json");
+      
+      // Manejo específico para el error 404 (No encontrado)
+      if (response.status === 404) {
+        let mensaje = `El participante con ID ${participanteId} no puede ser editado. URL: ${url}`;
+        
+        if (hasJsonContent) {
+          try {
+            const errorData = await response.json();
+            if (errorData.error) {
+              mensaje = errorData.error;
+            }
+          } catch (e) {
+            console.error('Error al parsear JSON en respuesta 404:', e);
+          }
         }
-        throw new Error(errorMsg);
+        
+        return {
+          success: false,
+          notFound: true,
+          message: mensaje
+        };
       }
-
-      try {
-        const data = await response.json();
-        console.log('Participante editado:', data);
-        set({
-          participantes: get().participantes.map(p => p.id === id ? data : p)
-        });
-      } catch (jsonError) {
-        console.error('Error al parsear JSON en editParticipante:', jsonError);
-        // Recargar la lista de participantes para asegurar consistencia
-        await get().fetchParticipantes(token);
+  
+      // Manejo específico para correo duplicado (400)
+      if (response.status === 400) {
+        let errorMessage = 'Error al editar participante';
+        let validationErrors = undefined;
+        
+        if (hasJsonContent) {
+          try {
+            const errorData = await response.json();
+            
+            // Verificar si el error es de correo duplicado
+            if (errorData.error && (
+                errorData.error.includes('email') || 
+                errorData.error.includes('correo') ||
+                errorData.error.includes('duplicado') ||
+                errorData.error.includes('ya existe')
+              )) {
+              return {
+                success: false,
+                isDuplicate: true,
+                message: `El correo ${datos.email} ya está registrado en este sorteo.`
+              };
+            }
+            
+            // Si contiene detalles de validación del schema Zod
+            if (errorData.details) {
+              validationErrors = errorData.details;
+              errorMessage = 'Los datos no cumplen con los requisitos';
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            console.error('No se pudo parsear la respuesta de error (400):', e);
+            errorMessage = 'Error al editar participante: formato de respuesta inválido';
+          }
+        }
+        
+        return {
+          success: false,
+          validationErrors,
+          message: errorMessage
+        };
       }
+  
+      // Para cualquier otro error HTTP
+      if (!response.ok) {
+        return {
+          success: false,
+          message: `Error ${response.status}: ${response.statusText || 'Error desconocido al editar participante'}`
+        };
+      }
+  
+      // Procesar respuesta exitosa
+      if (hasJsonContent) {
+        try {
+          const data = await response.json();
+          console.log('Participante editado - respuesta completa:', data);
+          
+          // Extraer el participante actualizado de la respuesta
+          // La estructura esperada es {message: string, participante: objeto}
+          const participanteActualizado = data.participante || data;
+          
+          console.log('Participante actualizado extraído:', participanteActualizado);
+          
+          if (!participanteActualizado || !participanteActualizado.id) {
+            console.error('Estructura de respuesta inesperada en editParticipante:', data);
+            // Si no podemos extraer el participante, recargamos la lista
+            await get().fetchParticipantes(token);
+            return { success: true };
+          }
+          
+          // Actualizar el estado con el participante editado
+          set({
+            participantes: get().participantes.map(p => 
+              p.id === participanteId ? participanteActualizado : p
+            )
+          });
+          
+          return { success: true };
+        } catch (jsonError) {
+          console.error('Error al parsear JSON en respuesta exitosa:', jsonError);
+        }
+      }
+      
+      // Si no pudimos parsear la respuesta JSON o no era JSON, recargamos la lista
+      console.log('Recargando lista de participantes después de edición...');
+      await get().fetchParticipantes(token);
+      
+      return { 
+        success: true, 
+        message: 'Cambios guardados, pero hubo un problema al procesar la respuesta. La lista ha sido recargada.' 
+      };
     } catch (error: any) {
       console.error('Error en editParticipante:', error);
-      throw error;
+      // Error de red o excepción no controlada
+      return {
+        success: false,
+        message: error.message || 'Error de conexión al editar participante'
+      };
     }
   },
 
   deleteParticipante: async (token, id) => {
     try {
       console.log('Eliminando participante:', id);
-      const response = await fetch(`/api/sorteos/${token}/participantes/${id}`, {
+      
+      // Construir la URL correcta
+      const url = `/api/sorteos/${token}/participantes-por-id/${id}`;
+      console.log(`URL para eliminar: ${url}`);
+      
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
+        cache: 'no-store'
       });
-
+  
       console.log('Respuesta de deleteParticipante:', response.status, response.statusText);
-
-      if (!response.ok) {
-        let errorMsg = 'Error al eliminar participante';
-        try {
-          const errorData = await response.json();
-          console.error('Error en deleteParticipante:', errorData);
-          errorMsg = errorData.error || errorMsg;
-        } catch (e) {
-          console.error('No se pudo parsear la respuesta de error en deleteParticipante');
+  
+      // Verificar si la respuesta tiene contenido JSON
+      const contentType = response.headers.get("content-type");
+      const hasJsonContent = contentType && contentType.includes("application/json");
+  
+      // Manejo específico para el error 404 (No encontrado)
+      if (response.status === 404) {
+        let mensaje = `El participante con ID ${id} no existe o ya ha sido eliminado.`;
+        
+        if (hasJsonContent) {
+          try {
+            const errorData = await response.json();
+            if (errorData.error) {
+              mensaje = errorData.error;
+            }
+          } catch (e) {
+            console.error('Error al parsear JSON en respuesta 404:', e);
+          }
         }
-        throw new Error(errorMsg);
+        
+        return {
+          success: false,
+          notFound: true,
+          message: mensaje
+        };
       }
-
+  
+      // Para cualquier otro error HTTP
+      if (!response.ok) {
+        let errorMsg = `Error ${response.status}: ${response.statusText || 'Error desconocido al eliminar participante'}`;
+        
+        if (hasJsonContent) {
+          try {
+            const errorData = await response.json();
+            if (errorData.error) {
+              errorMsg = errorData.error;
+            }
+          } catch (e) {
+            // No hacer log del error para evitar ruido en la consola
+            // Solo informar que no pudimos parsear la respuesta
+          }
+        }
+        
+        return {
+          success: false,
+          message: errorMsg
+        };
+      }
+  
+      // En caso de éxito
       console.log('Participante eliminado correctamente');
+      
+      // Actualizar el estado local eliminando el participante
       set({
         participantes: get().participantes.filter(p => p.id !== id)
       });
+      
+      return { 
+        success: true,
+        message: 'Participante eliminado correctamente' 
+      };
     } catch (error: any) {
       console.error('Error en deleteParticipante:', error);
-      throw error;
+      
+      // En lugar de lanzar un error, devolver un objeto con información
+      return {
+        success: false,
+        message: error.message || 'Error de conexión al eliminar participante'
+      };
     }
   },
 

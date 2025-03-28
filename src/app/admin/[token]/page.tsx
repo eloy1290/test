@@ -90,9 +90,17 @@ export default function AdminPage({ params }: { params: { token: string } }) {
     if (!sorteo) return;
     
     try {
-      await addParticipante(token, participante);
+      // Ahora esperamos un resultado tipado de addParticipante
+      const result = await addParticipante(token, participante);
+      
+      // Si es un caso de correo duplicado, devolvemos el resultado para que
+      // ParticipantesList pueda mostrar el mensaje apropiado
+      return result;
     } catch (error: any) {
-      alert(`Error: ${error.message}`);
+      // Otros errores inesperados
+      console.error('Error en handleAddParticipante:', error);
+      // Propagamos el error para que ParticipantesList lo pueda manejar
+      throw error;
     }
   };
 
@@ -101,21 +109,63 @@ export default function AdminPage({ params }: { params: { token: string } }) {
     if (!sorteo) return;
     
     try {
-      await editParticipante(token, id, datos);
+      const result = await editParticipante(token, id, datos);
+      
+      if (!result.success) {
+        // Si hay un mensaje específico, mostrarlo
+        alert(`Error: ${result.message}`);
+        // Devolver el resultado para que ParticipantesList pueda manejarlo
+        return result;
+      }
+      
+      // En caso de éxito con mensaje informativo
+      if (result.message) {
+        alert(result.message);
+      }
+      
+      return result;
     } catch (error: any) {
-      alert(`Error: ${error.message}`);
+      // Este bloque no debería ejecutarse con la nueva implementación
+      // pero lo mantenemos por si acaso
+      console.error('Error inesperado en handleEditParticipante:', error);
+      alert(`Error: ${error.message || 'Ha ocurrido un error desconocido'}`);
+      throw error;
     }
   };
 
   // Manejar eliminar participante
   const handleDeleteParticipante = async (id: number) => {
     if (!sorteo) return;
+    
     if (!confirm('¿Estás seguro de eliminar a este participante?')) return;
     
     try {
-      await deleteParticipante(token, id);
+      console.log(`Intentando eliminar participante ID ${id}`);
+      
+      const result = await deleteParticipante(token, id);
+      
+      if (!result.success) {
+        // Manejar caso específico de participante no encontrado
+        if (result.notFound) {
+          alert(`El participante ya no existe o ha sido eliminado. La lista será actualizada.`);
+          // Actualizar la lista de participantes para reflejar los cambios
+          await fetchParticipantes(token);
+        } else {
+          // Otros errores
+          alert(`Error: ${result.message || 'Error desconocido al eliminar participante'}`);
+        }
+      } else {
+        // Éxito - opcionalmente mostrar un mensaje de confirmación
+        if (result.message) {
+          // Podemos comentar esta línea si preferimos no mostrar mensajes en caso de éxito
+          // alert(result.message);
+        }
+      }
     } catch (error: any) {
-      alert(`Error: ${error.message}`);
+      // Este bloque no debería ejecutarse con la nueva implementación
+      // pero lo mantenemos por si acaso ocurre un error inesperado
+      console.error('Error inesperado en handleDeleteParticipante:', error);
+      alert(`Error inesperado: ${error.message || 'Ha ocurrido un error desconocido'}`);
     }
   };
 
@@ -368,6 +418,7 @@ export default function AdminPage({ params }: { params: { token: string } }) {
             <ExclusionesManager
               participantes={participantes}
               exclusiones={exclusiones}
+              estadoSorteo={sorteo.estado}
               onAddExclusion={handleAddExclusion}
               onDeleteExclusion={handleDeleteExclusion}
             />

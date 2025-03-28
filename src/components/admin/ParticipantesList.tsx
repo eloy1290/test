@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FiEdit2, FiTrash2, FiPlusCircle, FiX, FiSave } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import { AddParticipanteResult, EditParticipanteResult } from '@/hooks/useSorteoStore'; // Importar el tipo desde useSorteoStore
 
 export interface Participante {
   id: number;
@@ -14,8 +15,8 @@ export interface Participante {
 
 interface ParticipantesListProps {
   participantes: Participante[];
-  onAdd: (participante: { nombre: string; email: string }) => Promise<void>;
-  onEdit: (id: number, participante: { nombre: string; email: string }) => Promise<void>;
+  onAdd: (participante: { nombre: string; email: string }) => Promise<AddParticipanteResult | void>;
+  onEdit: (id: number, participante: { nombre: string; email: string }) => Promise<EditParticipanteResult | void>;
   onDelete: (id: number) => Promise<void>;
 }
 
@@ -35,32 +36,128 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
     setShowAddForm(false);
     setEditingId(null);
   };
-
+  const validateNombre = (nombre: string): string | null => {
+    if (!nombre.trim()) {
+      return 'El nombre es obligatorio';
+    }
+    if (nombre.trim().length < 2) {
+      return 'El nombre debe tener al menos 2 caracteres';
+    }
+    return null;
+  };
+  
+  const validateEmail = (email: string): string | null => {
+    if (!email.trim()) {
+      return 'El email es obligatorio';
+    }
+    // Regex simple para validación básica de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'El email no es válido';
+    }
+    return null;
+  };
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre || !formData.email) return;
+    
+    // Validar campos
+    const nombreError = validateNombre(formData.nombre);
+    const emailError = validateEmail(formData.email);
+    
+    if (nombreError) {
+      alert(nombreError);
+      return;
+    }
+    
+    if (emailError) {
+      alert(emailError);
+      return;
+    }
     
     setIsSubmitting(true);
     try {
-      await onAdd(formData);
-      resetForm();
-    } catch (error) {
+      const result = await onAdd(formData);
+      
+      // Verificar si la respuesta indica un caso de correo duplicado
+      if (result && 'success' in result && !result.success && result.isDuplicate) {
+        // Mostrar el mensaje de error pero mantener el formulario abierto para corrección
+        alert(result.message || 'Este correo ya está registrado en el sorteo');
+      } else {
+        // En caso de éxito, resetear el formulario
+        resetForm();
+      }
+    } catch (error: any) {
       console.error('Error al añadir participante:', error);
+      
+      // Mostrar mensaje de error amigable
+      alert(error.message || 'Ha ocurrido un error al añadir el participante');
+      
+      // No reseteamos el formulario para que el usuario pueda corregir el error
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingId || !formData.nombre || !formData.email) return;
+    
+    // Validar campos en el frontend
+    const nombreError = validateNombre(formData.nombre);
+    const emailError = validateEmail(formData.email);
+    
+    if (nombreError) {
+      alert(nombreError);
+      return;
+    }
+    
+    if (emailError) {
+      alert(emailError);
+      return;
+    }
+    
+    if (!editingId) return;
     
     setIsSubmitting(true);
     try {
-      await onEdit(editingId, formData);
-      resetForm();
-    } catch (error) {
+      const result = await onEdit(editingId, formData);
+      
+      // Verificar si hay un resultado y si fue exitoso
+      if (result && 'success' in result) {
+        if (result.success) {
+          // En caso de éxito, resetear el formulario
+          resetForm();
+        } else if (result.isDuplicate) {
+          // Caso específico de correo duplicado
+          alert(result.message || 'Este correo ya está registrado en el sorteo');
+          // No reseteamos el formulario para que el usuario pueda corregirlo
+        } else if (result.validationErrors) {
+          // Errores de validación específicos
+          let errorMessage = 'Errores de validación:\n';
+          
+          // Construir un mensaje con todos los errores de validación
+          Object.entries(result.validationErrors).forEach(([field, errors]) => {
+            if (Array.isArray(errors) && errors.length > 0) {
+              errorMessage += `- ${field}: ${errors.join(', ')}\n`;
+            }
+          });
+          
+          alert(errorMessage);
+        } else {
+          // Otro tipo de error
+          alert(result.message || 'Error al editar participante');
+        }
+        // No reseteamos el formulario para permitir correcciones en caso de error
+      } else {
+        // Si no hay un resultado definido o no tiene la propiedad success,
+        // asumimos éxito y reseteamos
+        resetForm();
+      }
+    } catch (error: any) {
       console.error('Error al editar participante:', error);
+      
+      // Mostrar mensaje de error amigable
+      alert(error.message || 'Ha ocurrido un error al editar el participante');
+      
     } finally {
       setIsSubmitting(false);
     }
@@ -178,8 +275,12 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {participantes.map((participante) => (
-                <tr key={participante.id}>
+            {participantes.map((participante) => {
+              // Usar una key compuesta para asegurar unicidad incluso durante edición
+              const key = `participante-${participante.id}-${editingId === participante.id ? 'editing' : 'normal'}`;
+              
+              return (
+                <tr key={key}>
                   {editingId === participante.id ? (
                     <td colSpan={3} className="px-6 py-4">
                       <form onSubmit={handleEdit} className="space-y-2">
@@ -253,7 +354,8 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
                     </>
                   )}
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
         </div>
