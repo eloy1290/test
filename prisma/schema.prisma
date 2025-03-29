@@ -96,11 +96,11 @@ model Deseo {
   id              Int           @id @default(autoincrement())
   nombre          String
   descripcion     String?
-  url             String?
+  url             String?       @db.Text
   precioEstimado  Float?
-  imagen          String?
+  imagen          String?       @db.Text
   amazonId        String?
-  amazonAfiliado  String?
+  amazonAfiliado  String?       @db.Text
   participanteId  Int
   participante    Participante  @relation(fields: [participanteId], references: [id], onDelete: Cascade)
   fechaCreacion   DateTime      @default(now())

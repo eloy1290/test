@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiEdit2, FiTrash2, FiPlusCircle, FiX, FiSave, FiExternalLink, FiLink } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlusCircle, FiX, FiSave, FiExternalLink, FiLink, FiShoppingBag } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card from '../ui/Card';
@@ -112,6 +112,12 @@ const ListaDeseos: React.FC<ListaDeseosProps> = ({
     resetForm();
   };
 
+  const handlePrioridadChange = (id: number, newPrioridad: number) => {
+    if (!onEdit) return;
+    
+    onEdit(id, { prioridad: newPrioridad });
+  };
+
   const ordenarPorPrioridad = (a: Deseo, b: Deseo) => b.prioridad - a.prioridad;
 
   const renderDeseoForm = () => (
@@ -140,7 +146,7 @@ const ListaDeseos: React.FC<ListaDeseosProps> = ({
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Input
-          label="URL (opcional)"
+          label="URL producto (opcional)"
           value={formData.url || ''}
           onChange={(e) => setFormData({ ...formData, url: e.target.value })}
           placeholder="https://..."
@@ -158,6 +164,19 @@ const ListaDeseos: React.FC<ListaDeseosProps> = ({
           placeholder="Ej: 25"
         />
       </div>
+      
+      {/* <Input
+        label="URL de imagen (opcional)"
+        value={formData.imagen || ''}
+        onChange={(e) => setFormData({ ...formData, imagen: e.target.value })}
+        placeholder="https://..."
+      /> */}
+      
+      {/* Campo oculto para prioridad */}
+      <input 
+        type="hidden" 
+        value={formData.prioridad} 
+      />
       
       <div className="flex justify-end space-x-2 pt-2">
         <Button
@@ -179,6 +198,11 @@ const ListaDeseos: React.FC<ListaDeseosProps> = ({
     </form>
   );
 
+  // Función para abrir Amazon
+  const handleOpenAmazon = () => {
+    window.open('https://amzn.to/4hPsiYT', '_blank');
+  };
+
   return (
     <div className="space-y-6">
       {!readOnly && (
@@ -186,11 +210,20 @@ const ListaDeseos: React.FC<ListaDeseosProps> = ({
           <h3 className="text-lg font-medium text-gray-900">Mi Lista de Deseos</h3>
           {!showAddForm && !editingId && (
             <div className="space-x-2">
+              <Button
+                onClick={handleOpenAmazon}
+                variant="amazon"
+                size="sm"
+                leftIcon={<FiShoppingBag />}
+              >
+                Ver en Amazon
+              </Button>
               {onBuscarProductos && (
                 <Button
                   onClick={onBuscarProductos}
                   variant="outline"
                   size="sm"
+                  leftIcon={<FiShoppingBag />}
                 >
                   Buscar en Amazon
                 </Button>
@@ -229,15 +262,31 @@ const ListaDeseos: React.FC<ListaDeseosProps> = ({
               : 'Aún no has añadido nada a tu lista de deseos.'}
           </p>
           {!readOnly && !showAddForm && (
-            <Button
-              onClick={() => setShowAddForm(true)}
-              leftIcon={<FiPlusCircle />}
-              variant="outline"
-              size="sm"
-              className="mt-2"
-            >
-              Añadir mi primer deseo
-            </Button>
+            <div className="mt-4 space-x-2">
+              <Button
+                onClick={handleOpenAmazon}
+                variant="amazon"
+                leftIcon={<FiShoppingBag />}
+              >
+                Ver en Amazon
+              </Button>
+              {onBuscarProductos && (
+                <Button
+                  onClick={onBuscarProductos}
+                  variant="outline"
+                  leftIcon={<FiShoppingBag />}
+                >
+                  Buscar en Amazon
+                </Button>
+              )}
+              <Button
+                onClick={() => setShowAddForm(true)}
+                leftIcon={<FiPlusCircle />}
+                variant="outline"
+              >
+                Añadir mi primer deseo
+              </Button>
+            </div>
           )}
         </div>
       ) : (
@@ -263,45 +312,86 @@ const ListaDeseos: React.FC<ListaDeseosProps> = ({
                     Aprox. {deseo.precioEstimado.toFixed(2)} €
                   </p>
                 )}
+                
+                
                 <div className="mt-4 flex justify-between items-center">
-                  {deseo.url && (
-                    <a 
-                      href={esAmigo && deseo.amazonAfiliado ? deseo.amazonAfiliado : deseo.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      <FiExternalLink className="mr-1" />
-                      Ver producto
-                    </a>
-                  )}
-                  
-                  {!readOnly && (
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => startEditing(deseo)}
-                        aria-label="Editar"
-                        title="Editar"
-                      >
-                        <FiEdit2 />
-                      </Button>
-                      {onDelete && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDelete(deseo.id)}
-                          aria-label="Eliminar"
-                          title="Eliminar"
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <FiTrash2 />
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
+  {deseo.url && (
+    <div>
+      <a 
+        href={deseo.url}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Button
+          variant="primary"
+          leftIcon={<FiExternalLink />}
+          size="sm"
+        >
+          Ver producto
+        </Button>
+      </a>
+    </div>
+  )}
+  
+  {!readOnly && (
+    <div className="flex space-x-2">
+      {onEdit && (
+        <div className="flex space-x-1 mr-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handlePrioridadChange(deseo.id, deseo.prioridad + 1)}
+            aria-label="Aumentar prioridad"
+            title="Aumentar prioridad"
+            className="text-gray-500 hover:text-gray-700"
+          >
+            👍
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handlePrioridadChange(deseo.id, Math.max(0, deseo.prioridad - 1))}
+            aria-label="Disminuir prioridad"
+            title="Disminuir prioridad"
+            className="text-gray-500 hover:text-gray-700"
+            disabled={deseo.prioridad <= 0}
+          >
+            👎
+          </Button>
+        </div>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => startEditing(deseo)}
+        aria-label="Editar"
+        title="Editar"
+      >
+        <FiEdit2 />
+      </Button>
+      {onDelete && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDelete(deseo.id)}
+          aria-label="Eliminar"
+          title="Eliminar"
+          className="text-red-600 hover:text-red-800"
+        >
+          <FiTrash2 />
+        </Button>
+      )}
+    </div>
+  )}
+</div>
+                
+                {!readOnly && deseo.amazonId && (
+                  <div className="mt-2 pt-2 border-t border-gray-100">
+                    <p className="text-xs text-gray-400">
+                      Producto de Amazon
+                    </p>
+                  </div>
+                )}
               </Card.Content>
             </Card>
           ))}

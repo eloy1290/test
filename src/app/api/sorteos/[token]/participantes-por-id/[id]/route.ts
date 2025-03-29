@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/db';
-import { sendInvitationEmail } from '@/services/email';
+import { sendInvitationEmail, sendSorteoCompletadoEmail } from '@/services/email';
 
 // Schema para validar la actualización de participantes
 const participanteUpdateSchema = z.object({
@@ -180,7 +180,7 @@ export async function DELETE(
   }
 }
 
-// Reenviar invitación
+// Reenviar invitación o notificación según estado del sorteo
 export async function POST(
   request: NextRequest,
   { params }: { params: { token: string; id: string } }
@@ -219,22 +219,44 @@ export async function POST(
       );
     }
 
-    // Reenviar invitación por email
-    await sendInvitationEmail(
-      participante.email,
-      participante.nombre,
-      sorteo.nombre,
-      sorteo.creadorNombre,
-      participante.token
-    );
+    // Decidir qué email enviar según el estado del sorteo
+    let emailEnviado = false;
+    
+    if (sorteo.estado === 'COMPLETO') {
+      console.log(`Reenviando email de sorteo completado a ${participante.nombre} (${participante.email})`);
+      // Utilizar la función para notificar que el sorteo ha sido realizado
+      emailEnviado = await sendSorteoCompletadoEmail(
+        participante.email,
+        participante.nombre,
+        sorteo.nombre,
+        participante.token
+      );
+    } else {
+      console.log(`Reenviando email de invitación a ${participante.nombre} (${participante.email})`);
+      // Utilizar la función para invitar a participar
+      emailEnviado = await sendInvitationEmail(
+        participante.email,
+        participante.nombre,
+        sorteo.nombre,
+        sorteo.creadorNombre,
+        participante.token
+      );
+    }
+
+    if (!emailEnviado) {
+      return NextResponse.json(
+        { error: 'Error al enviar el email' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
-      message: 'Invitación reenviada correctamente',
+      message: 'Email reenviado correctamente',
     });
   } catch (error) {
-    console.error('Error al reenviar invitación:', error);
+    console.error('Error al reenviar email:', error);
     return NextResponse.json(
-      { error: 'Error al reenviar invitación' },
+      { error: 'Error al reenviar email' },
       { status: 500 }
     );
   }

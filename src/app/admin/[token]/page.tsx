@@ -169,6 +169,39 @@ export default function AdminPage({ params }: { params: { token: string } }) {
     }
   };
 
+  const handleReenviarInvitacion = async (id: number) => {
+    if (!sorteo || !token) return;
+    
+    try {
+      console.log(`Intentando reenviar invitación para participante ID ${id}`);
+      
+      // La URL debe coincidir exactamente con la estructura de carpetas de tu API
+      // Basándonos en el error 404, la URL debe ser construida correctamente
+      const response = await fetch(`/api/sorteos/${token}/participantes-por-id/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Añadir un body vacío para asegurar que la solicitud es correcta
+        body: JSON.stringify({}),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.text(); // Usar text() en lugar de json() para ver el error real
+        console.error('Error en la respuesta:', errorData);
+        throw new Error(`Error en el servidor: ${response.status} ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+      console.log('Respuesta exitosa:', data);
+      
+      return data;
+    } catch (error: any) {
+      console.error('Error detallado al reenviar invitación:', error);
+      throw error;
+    }
+  };
+
   // Manejar añadir exclusión
   const handleAddExclusion = async (participanteDeId: number, participanteAId: number) => {
     if (!sorteo) return;
@@ -408,9 +441,11 @@ export default function AdminPage({ params }: { params: { token: string } }) {
           {activeTab === 'participantes' && (
             <ParticipantesList
               participantes={participantes}
+              estadoSorteo={sorteo.estado}
               onAdd={handleAddParticipante}
               onEdit={handleEditParticipante}
               onDelete={handleDeleteParticipante}
+              onReenviarInvitacion={sorteo.estado === 'COMPLETO' ? handleReenviarInvitacion : undefined}
             />
           )}
 

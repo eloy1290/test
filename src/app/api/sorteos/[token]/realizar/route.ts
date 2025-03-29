@@ -1,5 +1,3 @@
-// Ruta: /src/app/api/sorteos/[token]/realizar/route.ts
-
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 // Importaciones correctas según tus archivos existentes

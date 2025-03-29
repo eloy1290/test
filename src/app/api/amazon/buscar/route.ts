@@ -21,12 +21,11 @@ export async function GET(request: NextRequest) {
     // Realizar búsqueda en Amazon
     const resultados = await buscarProductos(keywords, categoria, precioMaximo);
 
+    // Siempre devolver un array (vacío si no hay resultados)
     return NextResponse.json(resultados);
   } catch (error) {
     console.error('Error al buscar productos en Amazon:', error);
-    return NextResponse.json(
-      { error: 'Error al buscar productos en Amazon' },
-      { status: 500 }
-    );
+    // En caso de error, devolver un array vacío en lugar de un error
+    return NextResponse.json([]);
   }
 }

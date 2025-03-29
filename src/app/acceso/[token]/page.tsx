@@ -62,7 +62,7 @@ export default function AccesoPage({ params }: { params: { token: string } }) {
   const [deseos, setDeseos] = useState<Deseo[]>([]);
   const [deseosAmigo, setDeseosAmigo] = useState<Deseo[]>([]);
   const [mostrarBuscador, setMostrarBuscador] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState('miListaDeseos');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [confirmando, setConfirmando] = useState(false);
@@ -245,22 +245,40 @@ export default function AccesoPage({ params }: { params: { token: string } }) {
   // Editar deseo
   const handleEditDeseo = async (id: number, deseo: Partial<Deseo>) => {
     try {
+      console.log(`Editando deseo ${id} con datos:`, deseo);
+      
+      // Limpiar cualquier campo vacío o undefined
+      const datosLimpios: Record<string, any> = {};
+      Object.entries(deseo).forEach(([key, value]) => {
+        // Solo incluir campos que no sean undefined
+        if (value !== undefined) {
+          datosLimpios[key] = value;
+        }
+      });
+      
+      console.log("Datos filtrados para enviar:", datosLimpios);
+      
       const response = await fetch(`/api/participantes/${token}/deseos/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(deseo),
+        body: JSON.stringify(datosLimpios),
       });
-
+  
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Error al editar deseo');
+        const errorData = await response.json();
+        console.error("Error detallado:", errorData);
+        throw new Error(errorData.error || 'Error al editar deseo');
       }
-
+  
+      const result = await response.json();
+      console.log("Respuesta de la API:", result);
+  
       // Actualizar lista de deseos
       await fetchDeseos();
     } catch (error: any) {
+      console.error("Error al actualizar deseo:", error);
       alert(`Error: ${error.message}`);
     }
   };
@@ -524,6 +542,7 @@ export default function AccesoPage({ params }: { params: { token: string } }) {
                       <BuscadorAmazon 
                         onSelectProduct={handleAddProductoAmazon}
                         presupuesto={sorteo.presupuesto}
+                        onClose={() => setMostrarBuscador(false)}
                       />
                     </div>
                   ) : (

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { FiEdit2, FiTrash2, FiPlusCircle, FiX, FiSave } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlusCircle, FiX, FiSave, FiMail } from 'react-icons/fi';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { AddParticipanteResult, EditParticipanteResult } from '@/hooks/useSorteoStore'; // Importar el tipo desde useSorteoStore
+import { AddParticipanteResult, EditParticipanteResult } from '@/hooks/useSorteoStore';
 
 export interface Participante {
   id: number;
@@ -15,21 +15,29 @@ export interface Participante {
 
 interface ParticipantesListProps {
   participantes: Participante[];
+  estadoSorteo: 'PENDIENTE' | 'COMPLETO' | 'CANCELADO'; // Añadido estado del sorteo
   onAdd: (participante: { nombre: string; email: string }) => Promise<AddParticipanteResult | void>;
   onEdit: (id: number, participante: { nombre: string; email: string }) => Promise<EditParticipanteResult | void>;
   onDelete: (id: number) => Promise<void>;
+  onReenviarInvitacion?: (id: number) => Promise<void>;
 }
 
 const ParticipantesList: React.FC<ParticipantesListProps> = ({
   participantes,
+  estadoSorteo,
   onAdd,
   onEdit,
   onDelete,
+  onReenviarInvitacion,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ nombre: '', email: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reenvioEnProceso, setReenvioEnProceso] = useState<{[key: number]: boolean}>({});
+
+  // Determinar si se debe mostrar la columna de reenvío
+  const mostrarReenvio = estadoSorteo === 'COMPLETO' && onReenviarInvitacion !== undefined;
 
   const resetForm = () => {
     setFormData({ nombre: '', email: '' });
@@ -163,6 +171,23 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
     }
   };
 
+  // Función para manejar el reenvío de invitación
+  const handleReenviarInvitacion = async (id: number) => {
+    if (!onReenviarInvitacion) return;
+    
+    setReenvioEnProceso(prev => ({ ...prev, [id]: true }));
+    
+    try {
+      await onReenviarInvitacion(id);
+      alert('Invitación reenviada correctamente');
+    } catch (error: any) {
+      console.error('Error al reenviar invitación:', error);
+      alert(error.message || 'Ha ocurrido un error al reenviar la invitación');
+    } finally {
+      setReenvioEnProceso(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
   const startEditing = (participante: Participante) => {
     setEditingId(participante.id);
     setFormData({ nombre: participante.nombre, email: participante.email });
@@ -178,7 +203,7 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
       <div className="flex flex-col md:flex-row justify-between items-center gap-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900">Participantes ({participantes.length})</h3>
         <div className="w-full md:w-auto">
-          {!showAddForm && (
+          {!showAddForm && estadoSorteo === 'PENDIENTE' && (
             <Button
               onClick={() => setShowAddForm(true)}
               leftIcon={<FiPlusCircle />}
@@ -194,7 +219,7 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
       </div>
 
       {/* Formulario de añadir participante */}
-      {showAddForm && (
+      {showAddForm && estadoSorteo === 'PENDIENTE' && (
         <form onSubmit={handleAdd} className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
           <div className="flex justify-between items-center mb-4">
             <h4 className="text-sm font-medium text-gray-700">Añadir nuevo participante</h4>
@@ -246,7 +271,7 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
       {participantes.length === 0 ? (
         <div className="text-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
           <p className="text-gray-500">Aún no hay participantes en este sorteo.</p>
-          {!showAddForm && (
+          {!showAddForm && estadoSorteo === 'PENDIENTE' && (
             <Button
               onClick={() => setShowAddForm(true)}
               leftIcon={<FiPlusCircle />}
@@ -269,6 +294,11 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Email
                 </th>
+                {mostrarReenvio && (
+                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Reenviar Invitación
+                  </th>
+                )}
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
@@ -282,7 +312,7 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
               return (
                 <tr key={key}>
                   {editingId === participante.id ? (
-                    <td colSpan={3} className="px-6 py-4">
+                    <td colSpan={mostrarReenvio ? 4 : 3} className="px-6 py-4">
                       <form onSubmit={handleEdit} className="space-y-2">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <Input
@@ -328,8 +358,28 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">{participante.email}</div>
                       </td>
+                      {mostrarReenvio && (
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleReenviarInvitacion(participante.id)}
+                            disabled={reenvioEnProceso[participante.id]}
+                            aria-label="Reenviar invitación"
+                            title="Reenviar invitación"
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            {reenvioEnProceso[participante.id] ? (
+                              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+                            ) : (
+                              <FiMail />
+                            )}
+                          </Button>
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
+                          {/* Mostrar siempre los botones de acciones, independientemente del estado */}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -362,7 +412,7 @@ const ParticipantesList: React.FC<ParticipantesListProps> = ({
       )}
 
       {/* Botón para añadir más participantes (siempre visible al final) */}
-      {participantes.length > 0 && !showAddForm && (
+      {participantes.length > 0 && !showAddForm && estadoSorteo === 'PENDIENTE' && (
         <div className="flex justify-center mt-4">
           <Button
             onClick={() => setShowAddForm(true)}

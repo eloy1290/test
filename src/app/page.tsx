@@ -15,7 +15,7 @@ export default function Home() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="flex-shrink-0 flex items-center">
-                <span className="text-primary-600 text-2xl font-bold">AmigoInvisible</span>
+                <span className="text-primary-600 text-2xl font-bold">Amigo Invisible</span>
               </Link>
             </div>
             <div className="flex items-center">

@@ -33,7 +33,7 @@ const CrearSorteoForm: React.FC<CrearSorteoFormProps> = ({ onSubmit }) => {
     defaultValues: {
       nombre: '',
       descripcion: '',
-      presupuesto: '',
+      presupuesto: undefined,
       // Fecha predeterminada: 1 mes a partir de hoy
       fechaLimite: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       creadorNombre: '',

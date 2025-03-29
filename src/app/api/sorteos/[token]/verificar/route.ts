@@ -1,5 +1,3 @@
-// src/app/api/sorteos/[token]/verificar/route.ts
-
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 
