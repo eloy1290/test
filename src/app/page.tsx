@@ -245,15 +245,18 @@ export default function Home() {
                 &copy; {new Date().getFullYear()} AmigoInvisible. Todos los derechos reservados.
               </p>
               <div className="mt-2 flex space-x-4">
-                <a href="/privacidad" className="text-gray-300 hover:text-white text-sm">
+              <Link href="/privacidad" className="text-gray-300 hover:text-white text-sm">
                   Política de privacidad
-                </a>
-                <a href="/terminos" className="text-gray-300 hover:text-white text-sm">
+                </Link>
+                <Link href="/terminos" className="text-gray-300 hover:text-white text-sm">
                   Términos de uso
-                </a>
-                <a href="/contacto" className="text-gray-300 hover:text-white text-sm">
+                </Link>
+                <Link href="/cookies" className="text-gray-300 hover:text-white text-sm">
+                  Política de cookies
+                </Link>
+                <Link href="/contacto" className="text-gray-300 hover:text-white text-sm">
                   Contacto
-                </a>
+                </Link>
               </div>
             </div>
           </div>
