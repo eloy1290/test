@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -62,7 +62,7 @@ model Exclusion {
 
   @@unique([participanteDeId, participanteAId])
   @@index([sorteoId], map: "idx_exclusion_sorteo")
-  @@index([participanteAId], map: "Exclusion_participanteAId_fkey")
+  @@index([participanteAId], map: "idx_exclusion_participanteA")
 }
 
 model Asignacion {
